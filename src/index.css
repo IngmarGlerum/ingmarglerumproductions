@@ -453,9 +453,13 @@ img {
   aspect-ratio: 16 / 9;
 }
 
-.modal__frame--audio {
+.modal__frame--spotify {
   height: 352px;
   border-radius: 12px;
+}
+
+.modal__frame--soundcloud {
+  height: min(450px, 70vh);
 }
 
 .modal__close {

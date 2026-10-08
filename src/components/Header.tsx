@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { sections, site } from '../content';
+import { visibleSections as sections, site } from '../content';
 
 export default function Header() {
   const [open, setOpen] = useState(false);

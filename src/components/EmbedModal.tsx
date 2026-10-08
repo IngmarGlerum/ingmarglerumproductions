@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { embedIsTall, toEmbedUrl } from '../embed';
+import { embedKind, toEmbedUrl } from '../embed';
 
 export default function EmbedModal({ link, title, onClose }: { link: string; title: string; onClose: () => void }) {
   useEffect(() => {
@@ -19,7 +19,7 @@ export default function EmbedModal({ link, title, onClose }: { link: string; tit
           ×
         </button>
         <iframe
-          className={embedIsTall(link) ? 'modal__frame--video' : 'modal__frame--audio'}
+          className={`modal__frame--${embedKind(link)}`}
           src={toEmbedUrl(link)}
           title={title}
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"

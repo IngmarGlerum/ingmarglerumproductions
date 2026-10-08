@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { sections, site } from './content';
+import { visibleSections as sections, site } from './content';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import ReleaseSection from './components/ReleaseSection';

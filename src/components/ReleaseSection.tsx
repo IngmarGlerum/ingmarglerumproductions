@@ -1,4 +1,5 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
+import { fetchEmbedInfo, type EmbedInfo } from '../embed';
 import type { Release, Role, Section } from '../content';
 import type { Player } from '../App';
 
@@ -40,20 +41,45 @@ export default function ReleaseSection({ section, player }: { section: Section; 
 
       <ul className="grid">
         {items.map((item) => (
-          <ReleaseCard key={`${item.title}-${item.artist}`} item={item} player={player} />
+          <ReleaseCard key={item.embed ?? item.audio ?? item.link ?? item.title} item={item} player={player} />
         ))}
       </ul>
     </section>
   );
 }
 
-function ReleaseCard({ item, player }: { item: Release; player: Player }) {
+// Haalt titel/hoes op uit de embed-link als die niet in content.ts staan.
+function useEmbedInfo(item: Release): EmbedInfo {
+  const [info, setInfo] = useState<EmbedInfo>({});
+  const needsInfo = !!item.embed && (!item.title || !item.cover);
+
+  useEffect(() => {
+    if (!needsInfo || !item.embed) return;
+    let active = true;
+    void fetchEmbedInfo(item.embed).then((i) => active && setInfo(i));
+    return () => {
+      active = false;
+    };
+  }, [needsInfo, item.embed]);
+
+  return info;
+}
+
+function ReleaseCard({ item: raw, player }: { item: Release; player: Player }) {
+  const info = useEmbedInfo(raw);
+  const item = {
+    ...raw,
+    title: raw.title ?? info.title ?? '',
+    artist: raw.artist ?? info.artist,
+    cover: raw.cover ?? info.cover,
+  };
+  const name = item.title || 'deze release';
   const isCurrent = !!item.audio && player.current === item.audio;
   const isPlaying = isCurrent && player.playing;
 
   const onClick = () => {
     if (item.audio) player.toggle(item.audio);
-    else if (item.embed) player.openEmbed(item.embed, item.title);
+    else if (item.embed) player.openEmbed(item.embed, name);
     else if (item.link) window.open(item.link, '_blank', 'noopener');
   };
   const clickable = !!(item.audio || item.embed || item.link);
@@ -61,7 +87,7 @@ function ReleaseCard({ item, player }: { item: Release; player: Player }) {
   const cover = (
     <div className="card__cover">
       {item.cover ? (
-        <img src={item.cover} alt={`${item.title} – ${item.artist}`} loading="lazy" />
+        <img src={item.cover} alt={[item.title, item.artist].filter(Boolean).join(' – ')} loading="lazy" />
       ) : (
         <div className="card__placeholder" aria-hidden="true">
           {item.title}
@@ -79,10 +105,10 @@ function ReleaseCard({ item, player }: { item: Release; player: Player }) {
   );
 
   const label = item.audio
-    ? `${isPlaying ? 'Pauzeer' : 'Speel'} ${item.title}`
+    ? `${isPlaying ? 'Pauzeer' : 'Speel'} ${name}`
     : item.embed
-      ? `Beluister ${item.title}`
-      : `Open ${item.title}`;
+      ? `Beluister ${name}`
+      : `Open ${name}`;
 
   return (
     <li className="card">
@@ -93,11 +119,13 @@ function ReleaseCard({ item, player }: { item: Release; player: Player }) {
       ) : (
         cover
       )}
-      <h3 className="card__title">{item.title}</h3>
-      <p className="card__artist">
-        {item.artist}
-        {item.year && ` (${item.year})`}
-      </p>
+      {item.title && <h3 className="card__title">{item.title}</h3>}
+      {(item.artist || item.year) && (
+        <p className="card__artist">
+          {item.artist}
+          {item.year && (item.artist ? ` (${item.year})` : item.year)}
+        </p>
+      )}
       {item.credit && <p className="card__credit">{item.credit}</p>}
     </li>
   );
